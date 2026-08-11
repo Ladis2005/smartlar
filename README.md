@@ -257,9 +257,11 @@ A ordem é sempre: **1)** gravar o pedido na base de dados, **2)** tentar notifi
 Se a API estiver em baixo, o pedido continua no painel e a notificação fica com
 `notification_status = failed`, `attempts`, `last_error` e `sent_at` registados.
 
-Reenvio manual: botão **Reenviar WhatsApp** no detalhe do pedido.
+Reenvio manual: botões **Reenviar WhatsApp** / **Reenviar e-mail** no detalhe do pedido.
 Reenvio automático: `GET /api/notifications/retry` (até 5 tentativas por notificação), já agendado
-de hora a hora no `vercel.json`. Proteja-o com `CRON_SECRET` se quiser.
+uma vez por dia (03h00) no `vercel.json` — os planos gratuitos (Hobby) da Vercel só permitem cron
+jobs diários. Com o plano Pro pode aumentar a frequência (ex.: `0 * * * *` para de hora a hora).
+Proteja-o com `CRON_SECRET` se quiser.
 
 ### Mensagem ao cliente
 
