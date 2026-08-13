@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { requireAdmin } from '@/lib/auth';
 import { createAdminSupabase } from '@/lib/supabase/admin';
 import { logger } from '@/lib/logger';
-import { notifyAdminNewOrder, notifyAdminNewOrderByEmail } from '@/lib/whatsapp/notify';
+import { notifyAdminNewOrder, notifyAdminNewOrderByEmail, notifyAdminNewOrderByPush } from '@/lib/whatsapp/notify';
 import { ORDER_STATUS_LABELS } from '@/lib/status';
 import type { OrderStatus, PaymentStatus } from '@/lib/types';
 
@@ -125,6 +125,16 @@ export async function resendOrderNotificationEmail(orderId: string): Promise<Act
 
   return result.status === 'sent'
     ? { ok: true, message: 'Notificação enviada para o e-mail do administrador.' }
+    : { ok: false, message: result.error ?? 'Não foi possível enviar a notificação.' };
+}
+
+export async function resendOrderNotificationPush(orderId: string): Promise<ActionResult> {
+  await requireAdmin();
+  const result = await notifyAdminNewOrderByPush(orderId);
+  refresh(orderId);
+
+  return result.status === 'sent'
+    ? { ok: true, message: 'Notificação enviada para os dispositivos ativos.' }
     : { ok: false, message: result.error ?? 'Não foi possível enviar a notificação.' };
 }
 

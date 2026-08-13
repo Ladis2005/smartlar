@@ -8,7 +8,12 @@ import { createAdminSupabase, hasServiceRole } from '@/lib/supabase/admin';
 import { checkoutSchema, type CheckoutInput } from '@/lib/validation';
 import { rateLimit } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
-import { notifyAdminNewOrder, notifyAdminNewOrderByEmail, notifyCustomerOrderReceived } from '@/lib/whatsapp/notify';
+import {
+  notifyAdminNewOrder,
+  notifyAdminNewOrderByEmail,
+  notifyAdminNewOrderByPush,
+  notifyCustomerOrderReceived,
+} from '@/lib/whatsapp/notify';
 
 export interface CheckoutSuccess {
   ok: true;
@@ -141,11 +146,15 @@ export async function createOrderAction(input: CheckoutInput): Promise<CheckoutR
   // o pedido mantém-se e fica disponível para reenvio no painel.
   let notification: 'sent' | 'failed' = 'failed';
   if (!order.duplicate) {
-    const [whatsappResult, emailResult] = await Promise.all([
+    const [whatsappResult, emailResult, pushResult] = await Promise.all([
       notifyAdminNewOrder(order.order_id),
       notifyAdminNewOrderByEmail(order.order_id),
+      notifyAdminNewOrderByPush(order.order_id),
     ]);
-    notification = whatsappResult.status === 'sent' || emailResult.status === 'sent' ? 'sent' : 'failed';
+    notification =
+      whatsappResult.status === 'sent' || emailResult.status === 'sent' || pushResult.status === 'sent'
+        ? 'sent'
+        : 'failed';
     // Só corre quando existir um template aprovado para o cliente.
     void notifyCustomerOrderReceived(order.order_id).catch(() => undefined);
   }

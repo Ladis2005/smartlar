@@ -28,6 +28,19 @@ export const metadata: Metadata = {
   },
   robots: { index: true, follow: true },
   alternates: { canonical: '/' },
+  icons: {
+    icon: [{ url: '/icon-192.png', sizes: '192x192', type: 'image/png' }],
+    apple: [{ url: '/icon-192.png', sizes: '192x192', type: 'image/png' }],
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'SmartLar',
+  },
+};
+
+export const viewport = {
+  themeColor: '#0e1e3f',
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {

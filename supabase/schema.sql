@@ -173,6 +173,18 @@ create index if not exists notifications_order_idx on notifications (order_id);
 create index if not exists notifications_status_idx on notifications (status);
 
 -- ---------------------------------------------------------------------------
+-- Subscrições de notificações push (navegador/telemóvel, PWA instalada)
+-- ---------------------------------------------------------------------------
+create table if not exists push_subscriptions (
+  id uuid primary key default gen_random_uuid(),
+  endpoint text not null unique,
+  p256dh text not null,
+  auth text not null,
+  admin_email text,
+  created_at timestamptz not null default now()
+);
+
+-- ---------------------------------------------------------------------------
 -- Registo de eventos (auditoria simples, sem dados sensíveis)
 -- ---------------------------------------------------------------------------
 create table if not exists activity_logs (
@@ -471,6 +483,7 @@ alter table payments enable row level security;
 alter table notifications enable row level security;
 alter table activity_logs enable row level security;
 alter table site_settings enable row level security;
+alter table push_subscriptions enable row level security;
 
 drop policy if exists "categorias visíveis a todos" on categories;
 create policy "categorias visíveis a todos" on categories
@@ -484,8 +497,9 @@ drop policy if exists "definições públicas" on site_settings;
 create policy "definições públicas" on site_settings
   for select using (true);
 
--- Sem políticas para customers, orders, order_items, payments, notifications
--- e activity_logs: nenhum cliente do navegador consegue lê-las ou escrevê-las.
+-- Sem políticas para customers, orders, order_items, payments, notifications,
+-- activity_logs e push_subscriptions: nenhum cliente do navegador consegue
+-- lê-las ou escrevê-las diretamente (só via server actions com service role).
 
 -- ---------------------------------------------------------------------------
 -- Storage

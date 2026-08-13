@@ -15,6 +15,8 @@ import {
   getWhatsAppProvider,
 } from './provider';
 import { getAdminNotificationEmail, getEmailProvider } from '../email/provider';
+import { sendPushToAdmins } from '../push/provider';
+import { formatMzn } from '../money';
 
 export interface NotifyResult {
   status: 'sent' | 'failed';
@@ -251,6 +253,66 @@ export async function notifyAdminNewOrderByEmail(orderId: string): Promise<Notif
   return { status: 'failed', error: result.error, notificationId };
 }
 
+/** Notifica todos os dispositivos (telemóvel/navegador) subscritos via push. */
+export async function notifyAdminNewOrderByPush(orderId: string): Promise<NotifyResult> {
+  const supabase = createAdminSupabase();
+  const order = await loadOrder(orderId);
+  if (!order) return { status: 'failed', error: 'Encomenda não encontrada.' };
+
+  const data = toNotificationData(order);
+  const body = `${data.customer.name} — ${formatMzn(data.totalCents)}`;
+
+  const { data: existing } = await supabase
+    .from('notifications')
+    .select('id, attempts')
+    .eq('order_id', order.id)
+    .eq('audience', 'admin')
+    .eq('channel', 'push')
+    .maybeSingle();
+
+  let notificationId = existing?.id as string | undefined;
+  const attempts = (existing?.attempts ?? 0) + 1;
+
+  if (!notificationId) {
+    const { data: created } = await supabase
+      .from('notifications')
+      .insert({
+        order_id: order.id,
+        channel: 'push',
+        audience: 'admin',
+        payload_preview: body,
+        status: 'pending',
+        attempts: 0,
+      })
+      .select('id')
+      .single();
+    notificationId = created?.id as string | undefined;
+  }
+
+  const result = await sendPushToAdmins(`🔔 Novo pedido #${order.order_number}`, body, `/admin/pedidos/${order.id}`);
+
+  if (notificationId) {
+    await supabase
+      .from('notifications')
+      .update({
+        status: result.ok ? 'sent' : 'failed',
+        attempts,
+        payload_preview: body,
+        last_error: result.ok ? null : result.error,
+        sent_at: result.ok ? new Date().toISOString() : null,
+      })
+      .eq('id', notificationId);
+  }
+
+  if (result.ok) {
+    logger.info('notification_sent', { orderNumber: order.order_number, channel: 'push' });
+    return { status: 'sent', notificationId };
+  }
+
+  logger.warn('notification_failed', { orderNumber: order.order_number, reason: result.error, channel: 'push' });
+  return { status: 'failed', error: result.error, notificationId };
+}
+
 /**
  * Confirmação para o cliente. Fica desativada enquanto
  * WHATSAPP_CUSTOMER_TEMPLATE_NAME não estiver preenchido — a Meta só permite
@@ -308,6 +370,7 @@ export async function notifyCustomerOrderReceived(orderId: string): Promise<Noti
 function dispatchByChannel(orderId: string, audience: string, channel: string): Promise<NotifyResult> {
   if (audience === 'customer') return notifyCustomerOrderReceived(orderId);
   if (channel === 'email') return notifyAdminNewOrderByEmail(orderId);
+  if (channel === 'push') return notifyAdminNewOrderByPush(orderId);
   return notifyAdminNewOrder(orderId);
 }
 

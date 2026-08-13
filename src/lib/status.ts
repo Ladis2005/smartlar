@@ -33,6 +33,7 @@ export const NOTIFICATION_STATUS_LABELS: Record<NotificationStatus, string> = {
 export const NOTIFICATION_CHANNEL_LABELS: Record<string, string> = {
   whatsapp: 'WhatsApp',
   email: 'E-mail',
+  push: 'Notificação do site',
 };
 
 export const ORDER_STATUS_TONE: Record<OrderStatus, string> = {

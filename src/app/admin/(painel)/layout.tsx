@@ -4,6 +4,7 @@ import { requireAdmin } from '@/lib/auth';
 import { signOutAdmin } from '@/server/actions/auth';
 import { getRecentActivity } from '@/server/admin-data';
 import { NotificationBell } from '@/components/admin/NotificationBell';
+import { PushToggle } from '@/components/admin/PushToggle';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,7 +27,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <p className="text-xs text-navy-500">Sessão de {session.email}</p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          <PushToggle />
           <NotificationBell items={activity} />
           <form action={signOutAdmin}>
             <button type="submit" className="btn-ghost text-sm">

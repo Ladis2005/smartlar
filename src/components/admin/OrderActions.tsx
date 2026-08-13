@@ -8,6 +8,7 @@ import {
   markPaymentFailed,
   resendOrderNotification,
   resendOrderNotificationEmail,
+  resendOrderNotificationPush,
   updateOrderStatus,
   type ActionResult,
 } from '@/server/actions/orders';
@@ -57,6 +58,7 @@ export function OrderActions({ orderId, status, paymentConfirmed }: Props) {
     },
     { label: 'Reenviar WhatsApp', run: () => resendOrderNotification(orderId) },
     { label: 'Reenviar e-mail', run: () => resendOrderNotificationEmail(orderId) },
+    { label: 'Reenviar notificação do site', run: () => resendOrderNotificationPush(orderId) },
     {
       label: 'Marcar pagamento como não recebido',
       run: () => markPaymentFailed(orderId),
