@@ -260,7 +260,7 @@ export async function notifyAdminNewOrderByPush(orderId: string): Promise<Notify
   if (!order) return { status: 'failed', error: 'Encomenda não encontrada.' };
 
   const data = toNotificationData(order);
-  const body = `${data.customer.name} — ${formatMzn(data.totalCents)}`;
+  const body = formatMzn(data.totalCents);
 
   const { data: existing } = await supabase
     .from('notifications')
@@ -289,7 +289,7 @@ export async function notifyAdminNewOrderByPush(orderId: string): Promise<Notify
     notificationId = created?.id as string | undefined;
   }
 
-  const result = await sendPushToAdmins(`🔔 Novo pedido #${order.order_number}`, body, `/admin/pedidos/${order.id}`);
+  const result = await sendPushToAdmins('🔔 Novo pedido', body, `/admin/pedidos/${order.id}`);
 
   if (notificationId) {
     await supabase
